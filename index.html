@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yoklama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F5F8;
+    --surface: #FFFFFF;
+    --ink: #14233A;
+    --muted: #5A6A7F;
+    --line: #DAE2EA;
+    --brand: #1E4E8C;
+    --brand-ink: #FFFFFF;
+    --present: #1E8656;
+    --present-bg: #DDF2E6;
+    --absent: #C2413A;
+    --absent-bg: #FBE2DF;
+    --empty: #EBF0F4;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F1722;
+      --surface: #172231;
+      --ink: #E6EDF5;
+      --muted: #93A3B8;
+      --line: #273547;
+      --brand: #5B93D9;
+      --brand-ink: #0F1722;
+      --present: #4CC488;
+      --present-bg: #173A2A;
+      --absent: #F0776F;
+      --absent-bg: #3E1F1D;
+      --empty: #1F2C3D;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.45;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  .hidden { display: none !important; }
+
+  /* Login */
+  .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+  .login-card {
+    width: 100%; max-width: 360px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px; padding: 28px;
+  }
+  .login-card h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  .login-card p { margin: 0 0 20px; color: var(--muted); }
+  label { display: block; font-size: .9rem; color: var(--muted); margin: 12px 0 4px; }
+  input[type=email], input[type=password], input[type=text], input[type=date] {
+    width: 100%; padding: 11px 12px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--bg);
+  }
+  .btn {
+    border: 0; border-radius: 8px; padding: 11px 16px; font-weight: 500;
+    background: var(--brand); color: var(--brand-ink);
+  }
+  .btn.block { width: 100%; margin-top: 18px; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn.danger { background: var(--absent); color: #fff; }
+  .error { color: var(--absent); font-size: .9rem; margin-top: 12px; min-height: 1.2em; }
+
+  /* App shell */
+  header.top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .top-inner {
+    max-width: 980px; margin: 0 auto; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; font-size: 1.2rem; margin-right: auto; }
+  .who { color: var(--muted); font-size: .85rem; }
+  nav.tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; }
+  nav.tabs button {
+    border: 0; background: transparent; padding: 7px 14px; border-radius: 7px; font-weight: 500; color: var(--muted);
+  }
+  nav.tabs button[aria-selected=true] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+
+  .datebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .datebar .day { font-size: 1.35rem; font-weight: 600; margin-right: auto; }
+  .datebar input[type=date] { width: auto; padding: 8px 10px; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface); font-size: 1.1rem; line-height: 1;
+  }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  .empty-state { padding: 32px 20px; text-align: center; color: var(--muted); }
+  .empty-state .btn { margin-top: 12px; }
+
+  /* Daily grid */
+  .grid-scroll { overflow-x: auto; border-radius: 14px; }
+  table.grid { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 560px; }
+  .grid th, .grid td { padding: 6px; text-align: center; border-bottom: 1px solid var(--line); }
+  .grid tr:last-child td { border-bottom: 0; }
+  .grid thead th { font-size: .8rem; font-weight: 500; color: var(--muted); padding-top: 12px; }
+  .grid .name {
+    text-align: left; padding-left: 16px; font-weight: 500; white-space: nowrap;
+    position: sticky; left: 0; background: var(--surface); z-index: 1;
+    max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .grid .total { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; padding-right: 16px; white-space: nowrap; }
+  .cell {
+    width: 40px; height: 40px; border-radius: 8px; border: 0;
+    background: var(--empty); color: var(--muted); font-size: 1.05rem; font-weight: 600;
+    transition: transform .08s ease;
+  }
+  .cell:active { transform: scale(.92); }
+  .cell.p { background: var(--present-bg); color: var(--present); }
+  .cell.a { background: var(--absent-bg); color: var(--absent); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: .85rem; margin-top: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
+
+  /* Hourly view */
+  .slots { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .slots button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 7px 14px; font-weight: 500;
+  }
+  .slots button[aria-pressed=true] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .hour-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .pill { padding: 5px 12px; border-radius: 999px; font-size: .9rem; font-weight: 500; }
+  .pill.p { background: var(--present-bg); color: var(--present); }
+  .pill.a { background: var(--absent-bg); color: var(--absent); }
+  .pill.e { background: var(--empty); color: var(--muted); }
+  .hour-summary .btn { margin-left: auto; padding: 8px 14px; }
+  .roster { list-style: none; margin: 0; padding: 0; }
+  .roster li {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .roster li:last-child { border-bottom: 0; }
+  .roster .sname { margin-right: auto; font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+  .toggle { display: flex; gap: 6px; }
+  .toggle button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+    padding: 8px 14px; font-weight: 500; min-width: 64px;
+  }
+  .toggle button.on-p { background: var(--present); border-color: var(--present); color: #fff; }
+  .toggle button.on-a { background: var(--absent); border-color: var(--absent); color: #fff; }
+
+  /* Students view */
+  .add-row { display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid var(--line); }
+  .add-row input { flex: 1; }
+  .count { color: var(--muted); font-size: .9rem; padding: 12px 16px 0; }
+  .remove-btn {
+    border: 1px solid var(--line); background: transparent; color: var(--absent);
+    border-radius: 8px; padding: 6px 12px; font-size: .9rem;
+  }
+
+  /* Modal */
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(10,18,30,.5); z-index: 20;
+    display: grid; place-items: center; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 14px; padding: 22px; width: 100%; max-width: 380px;
+    border: 1px solid var(--line);
+  }
+  .modal h2 { margin: 0 0 8px; font-size: 1.2rem; }
+  .modal p { margin: 0 0 20px; color: var(--muted); }
+  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 8px; z-index: 30; font-size: .95rem;
+  }
+  .notice { max-width: 560px; margin: 40px auto; padding: 20px; }
+
+  @media (max-width: 560px) {
+    .top-inner { padding: 10px 12px; }
+    nav.tabs { width: 100%; }
+    nav.tabs button { flex: 1; padding: 8px 6px; }
+    main { padding: 12px; }
+    .roster li { padding: 10px 12px; }
+    .toggle button { min-width: 54px; padding: 8px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cell { transition: none; } }
+</style>
+</head>
+<body>
+
+<!-- Kurulum uyarısı -->
+<div id="setup" class="notice panel hidden">
+  <h2>Kurulum gerekli</h2>
+  <p>Dosyanın içindeki <b>firebaseConfig</b> bölümüne Firebase proje bilgilerinizi yapıştırın.</p>
+</div>
+
+<!-- Giriş -->
+<div id="login" class="login-wrap hidden">
+  <form class="login-card" id="loginForm">
+    <h1>Yoklama</h1>
+    <p>Öğretmen hesabınızla giriş yapın.</p>
+    <label for="email">E-posta</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Şifre</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button class="btn block" type="submit" id="loginBtn">Giriş yap</button>
+    <div class="error" id="loginError"></div>
+  </form>
+</div>
+
+<!-- Uygulama -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">Yoklama</div>
+      <span class="who" id="who"></span>
+      <button class="btn ghost" id="logoutBtn" style="padding:7px 12px">Çıkış</button>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="daily" aria-selected="true">Günlük</button>
+        <button role="tab" data-view="hourly" aria-selected="false">Saatlik</button>
+        <button role="tab" data-view="students" aria-selected="false">Öğrenciler</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="datebar" id="datebar">
+      <div class="day" id="dayLabel"></div>
+      <button class="icon-btn" id="prevDay" aria-label="Önceki gün">‹</button>
+      <input type="date" id="dateInput" aria-label="Tarih seç">
+      <button class="icon-btn" id="nextDay" aria-label="Sonraki gün">›</button>
+      <button class="btn ghost" id="todayBtn" style="padding:8px 12px">Bugün</button>
+    </div>
+
+    <section id="view-daily"></section>
+    <section id="view-hourly" class="hidden"></section>
+    <section id="view-students" class="hidden"></section>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, deleteField, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ============================================================
+   1) BURAYI DOLDURUN: Firebase konsolu > Proje ayarları > Web uygulaması
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "BURAYA_API_KEY",
+  authDomain: "PROJE.firebaseapp.com",
+  projectId: "PROJE",
+  storageBucket: "PROJE.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "BURAYA_APP_ID"
+};
+/* ============================================================ */
+
+const SLOTS = 8; // günde 8 ders saati
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+if (firebaseConfig.apiKey.startsWith("BURAYA")) {
+  $("setup").classList.remove("hidden");
+  throw new Error("firebaseConfig doldurulmamış");
+}
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+/* ---------- Durum ---------- */
+const state = {
+  view: "daily",
+  date: todayStr(),
+  slot: 1,
+  students: [],   // [{id, name}]
+  marks: {},      // { studentId: { "1": "p" | "a", ... } }
+  loadingStudents: true
+};
+let unsubStudents = null;
+let unsubDay = null;
+
+/* ---------- Tarih yardımcıları ---------- */
+function todayStr() { return ymd(new Date()); }
+function ymd(d) {
+  const z = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+}
+function parseYmd(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function shiftDay(s, n) { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
+function dayLabel(s) {
+  const d = parseYmd(s);
+  const txt = d.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" });
+  return (s === todayStr() ? "Bugün, " : "") + txt;
+}
+
+/* ---------- Bildirim ---------- */
+let toastTimer;
+function toast(msg) {
+  $("toastRoot").innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $("toastRoot").innerHTML = ""; }, 2600);
+}
+function writeError(e) {
+  console.error(e);
+  toast(e?.code === "permission-denied" ? "Bu hesabın düzenleme izni yok." : "Kaydedilemedi. Bağlantınızı kontrol edin.");
+}
+
+/* ---------- Giriş ---------- */
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("loginError").textContent = "";
+  $("loginBtn").disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value);
+  } catch (err) {
+    const msg = {
+      "auth/invalid-credential": "E-posta veya şifre hatalı.",
+      "auth/wrong-password": "E-posta veya şifre hatalı.",
+      "auth/user-not-found": "E-posta veya şifre hatalı.",
+      "auth/invalid-email": "Geçerli bir e-posta girin.",
+      "auth/too-many-requests": "Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin."
+    }[err.code] || "Giriş yapılamadı. Tekrar deneyin.";
+    $("loginError").textContent = msg;
+  } finally {
+    $("loginBtn").disabled = false;
+  }
+});
+$("logoutBtn").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    $("login").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("who").textContent = user.email || "";
+    startData();
+  } else {
+    stopData();
+    $("app").classList.add("hidden");
+    $("login").classList.remove("hidden");
+  }
+});
+
+/* ---------- Veri ---------- */
+function startData() {
+  stopData();
+  state.loadingStudents = true;
+  unsubStudents = onSnapshot(collection(db, "students"), (snap) => {
+    state.students = snap.docs
+      .map(d => ({ id: d.id, name: d.data().name || "" }))
+      .sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    state.loadingStudents = false;
+    render();
+  }, (err) => {
+    console.error(err);
+    state.loadingStudents = false;
+    if (err.code === "permission-denied") toast("Bu hesabın erişim izni yok.");
+    render();
+  });
+  subscribeDay();
+}
+function stopData() {
+  unsubStudents?.(); unsubStudents = null;
+  unsubDay?.(); unsubDay = null;
+}
+function subscribeDay() {
+  unsubDay?.();
+  state.marks = {};
+  unsubDay = onSnapshot(doc(db, "attendance", state.date), (snap) => {
+    state.marks = snap.exists() ? (snap.data().marks || {}) : {};
+    render();
+  }, (err) => console.error(err));
+}
+
+function getMark(sid, slot) { return state.marks?.[sid]?.[String(slot)] || ""; }
+
+async function setMark(sid, slot, value) {
+  const ref = doc(db, "attendance", state.date);
+  const v = value ? value : deleteField();
+  try {
+    await setDoc(ref, { marks: { [sid]: { [String(slot)]: v } }, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) { writeError(e); }
+}
+
+async function markAllPresent(slot) {
+  const patch = {};
+  for (const s of state.students) {
+    if (!getMark(s.id, slot)) patch[s.id] = { [String(slot)]: "p" };
+  }
+  if (!Object.keys(patch).length) { toast("Bu saatte işaretlenmemiş öğrenci yok."); return; }
+  try {
+    await setDoc(doc(db, "attendance", state.date), { marks: patch, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (e) { writeError(e); }
+}
+
+async function addStudent(name) {
+  try {
+    await addDoc(collection(db, "students"), { name, createdAt: serverTimestamp() });
+  } catch (e) { writeError(e); }
+}
+async function removeStudent(id) {
+  try { await deleteDoc(doc(db, "students", id)); toast("Öğrenci silindi."); }
+  catch (e) { writeError(e); }
+}
+
+/* ---------- Görünüm geçişi ---------- */
+document.querySelector("nav.tabs").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  state.view = b.dataset.view;
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  ["daily", "hourly", "students"].forEach(v => $("view-" + v).classList.toggle("hidden", v !== state.view));
+  $("datebar").classList.toggle("hidden", state.view === "students");
+  render();
+});
+
+/* ---------- Tarih çubuğu ---------- */
+function changeDate(s) {
+  if (!s || s === state.date) return;
+  state.date = s;
+  subscribeDay();
+  render();
+}
+$("prevDay").addEventListener("click", () => changeDate(shiftDay(state.date, -1)));
+$("nextDay").addEventListener("click", () => changeDate(shiftDay(state.date, 1)));
+$("todayBtn").addEventListener("click", () => changeDate(todayStr()));
+$("dateInput").addEventListener("change", (e) => changeDate(e.target.value));
+
+/* ---------- Render ---------- */
+function render() {
+  $("dayLabel").textContent = dayLabel(state.date);
+  $("dateInput").value = state.date;
+  if (state.view === "daily") renderDaily();
+  if (state.view === "hourly") renderHourly();
+  if (state.view === "students") renderStudents();
+}
+
+function noStudents() {
+  if (state.loadingStudents) return `<div class="panel empty-state">Yükleniyor…</div>`;
+  return `<div class="panel empty-state">Henüz öğrenci yok.<br>
+    <button class="btn" data-goto="students">Öğrenci ekle</button></div>`;
+}
+
+const SYMBOL = { p: "✓", a: "✕", "": "·" };
+const LABEL = { p: "var", a: "yok", "": "işaretlenmedi" };
+
+function renderDaily() {
+  const el = $("view-daily");
+  if (!state.students.length) { el.innerHTML = noStudents(); return; }
+  const head = Array.from({ length: SLOTS }, (_, i) => `<th scope="col">${i + 1}. saat</th>`).join("");
+  const rows = state.students.map(s => {
+    let present = 0, absent = 0;
+    const cells = Array.from({ length: SLOTS }, (_, i) => {
+      const m = getMark(s.id, i + 1);
+      if (m === "p") present++;
+      if (m === "a") absent++;
+      return `<td><button class="cell ${m}" data-sid="${s.id}" data-slot="${i + 1}"
+        aria-label="${esc(s.name)}, ${i + 1}. saat: ${LABEL[m]}">${SYMBOL[m]}</button></td>`;
+    }).join("");
+    return `<tr><th scope="row" class="name" title="${esc(s.name)}">${esc(s.name)}</th>${cells}
+      <td class="total">${present}/${SLOTS}${absent ? ` · ${absent} yok` : ""}</td></tr>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="panel grid-scroll">
+      <table class="grid">
+        <thead><tr><th class="name">Öğrenci</th>${head}<th class="total">Var</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--present-bg)"></i>Var</span>
+      <span><i style="background:var(--absent-bg)"></i>Yok</span>
+      <span><i style="background:var(--empty)"></i>İşaretlenmedi</span>
+      <span>Kutuya dokunun: boş → var → yok → boş</span>
+    </div>`;
+}
+
+function renderHourly() {
+  const el = $("view-hourly");
+  const chips = Array.from({ length: SLOTS }, (_, i) =>
+    `<button data-pick="${i + 1}" aria-pressed="${state.slot === i + 1}">${i + 1}. saat</button>`).join("");
+  if (!state.students.length) {
+    el.innerHTML = `<div class="slots">${chips}</div>${noStudents()}`;
+    return;
+  }
+  let p = 0, a = 0, e = 0;
+  const items = state.students.map(s => {
+    const m = getMark(s.id, state.slot);
+    if (m === "p") p++; else if (m === "a") a++; else e++;
+    return `<li>
+      <span class="sname">${esc(s.name)}</span>
+      <span class="toggle">
+        <button class="${m === "p" ? "on-p" : ""}" data-sid="${s.id}" data-set="p" aria-pressed="${m === "p"}">Var</button>
+        <button class="${m === "a" ? "on-a" : ""}" data-sid="${s.id}" data-set="a" aria-pressed="${m === "a"}">Yok</button>
+      </span></li>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="slots">${chips}</div>
+    <div class="hour-summary">
+      <span class="pill p">${p} var</span>
+      <span class="pill a">${a} yok</span>
+      <span class="pill e">${e} işaretlenmedi</span>
+      <button class="btn ghost" data-allp>Kalanları var işaretle</button>
+    </div>
+    <ul class="roster panel">${items}</ul>`;
+}
+
+function renderStudents() {
+  const el = $("view-students");
+  const list = state.students.map(s => `
+    <li><span class="sname">${esc(s.name)}</span>
+      <button class="remove-btn" data-remove="${s.id}">Sil</button></li>`).join("");
+  el.innerHTML = `
+    <div class="panel">
+      <form class="add-row" id="addForm">
+        <input type="text" id="newName" placeholder="Öğrenci adı soyadı" aria-label="Öğrenci adı soyadı" maxlength="80" autocomplete="off">
+        <button class="btn" type="submit">Ekle</button>
+      </form>
+      <div class="count">${state.students.length} öğrenci</div>
+      ${state.students.length
+        ? `<ul class="roster">${list}</ul>`
+        : `<div class="empty-state">${state.loadingStudents ? "Yükleniyor…" : "İlk öğrenciyi yukarıdan ekleyin."}</div>`}
+    </div>`;
+  $("addForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = $("newName");
+    const name = input.value.trim().replace(/\s+/g, " ");
+    if (!name) return;
+    input.value = "";
+    addStudent(name);
+    input.focus();
+  });
+}
+
+/* ---------- Tıklamalar ---------- */
+const NEXT = { "": "p", p: "a", a: "" };
+document.addEventListener("click", (e) => {
+  const cell = e.target.closest(".cell[data-sid]");
+  if (cell) {
+    const cur = getMark(cell.dataset.sid, cell.dataset.slot);
+    setMark(cell.dataset.sid, cell.dataset.slot, NEXT[cur]);
+    return;
+  }
+  const pick = e.target.closest("[data-pick]");
+  if (pick) { state.slot = Number(pick.dataset.pick); render(); return; }
+
+  const set = e.target.closest("[data-set]");
+  if (set) {
+    const cur = getMark(set.dataset.sid, state.slot);
+    const val = set.dataset.set;
+    setMark(set.dataset.sid, state.slot, cur === val ? "" : val); // aynı butona tekrar basınca temizler
+    return;
+  }
+  if (e.target.closest("[data-allp]")) { markAllPresent(state.slot); return; }
+
+  const rm = e.target.closest("[data-remove]");
+  if (rm) {
+    const s = state.students.find(x => x.id === rm.dataset.remove);
+    if (s) confirmRemove(s);
+    return;
+  }
+  const go = e.target.closest("[data-goto]");
+  if (go) document.querySelector(`nav.tabs button[data-view="${go.dataset.goto}"]`).click();
+});
+
+/* ---------- Silme onayı ---------- */
+function confirmRemove(s) {
+  const root = $("modalRoot");
+  const prevFocus = document.activeElement;
+  root.innerHTML = `
+    <div class="backdrop" id="backdrop">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+        <h2 id="mTitle">Öğrenci silinsin mi?</h2>
+        <p><b>${esc(s.name)}</b> listeden kaldırılacak. Bu işlem geri alınamaz.</p>
+        <div class="actions">
+          <button class="btn ghost" id="mCancel">Vazgeç</button>
+          <button class="btn danger" id="mOk">Sil</button>
+        </div>
+      </div>
+    </div>`;
+  const close = () => { root.innerHTML = ""; document.removeEventListener("keydown", onKey); prevFocus?.focus?.(); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  $("mCancel").addEventListener("click", close);
+  $("backdrop").addEventListener("click", (e) => { if (e.target.id === "backdrop") close(); });
+  $("mOk").addEventListener("click", () => { close(); removeStudent(s.id); });
+  $("mCancel").focus();
+}
+
+render();
+</script>
+</body>
+</html>
